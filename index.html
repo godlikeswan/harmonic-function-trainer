@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roman Numeral Trainer</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1e222d;
+    --line: #2a2f3d;
+    --text: #e6e8ef;
+    --muted: #9aa3b8;
+    --accent: #6ea8fe;
+    --accent-2: #7ee0c0;
+    --ok: #58d68d;
+    --bad: #ff7b72;
+    --warn: #ffc46b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 16px; }
+
+  header.top {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 0 16px;
+  }
+  header.top h1 { font-size: 19px; margin: 0; letter-spacing: .2px; font-weight: 650; }
+  header.top .spacer { flex: 1 1 auto; }
+  .iconbtn {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    padding: 7px 12px; border-radius: 9px; cursor: pointer; font-size: 14px;
+  }
+  .iconbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .iconbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- trainer ---------- */
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px;
+  }
+  .meta-row {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .badge {
+    background: var(--panel-2); border: 1px solid var(--line);
+    padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums;
+  }
+  .badge strong { color: var(--text); font-weight: 600; }
+  .keytag { color: var(--accent-2); font-weight: 600; }
+  .sig { color: var(--muted); }
+
+  .prompt { text-align: center; padding: 18px 0 6px; }
+  .prompt .label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .9px; }
+  .prompt .value {
+    font-size: clamp(34px, 9vw, 54px); font-weight: 700; letter-spacing: .5px;
+    margin-top: 6px; font-family: ui-serif, Georgia, "Times New Roman", serif;
+  }
+  .prompt .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  .options { display: grid; gap: 10px; margin-top: 18px; }
+  .options.cols2 { grid-template-columns: 1fr 1fr; }
+  .opt {
+    display: flex; align-items: center; gap: 12px; text-align: left;
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 13px 15px; cursor: pointer; font-size: 19px;
+    font-family: ui-serif, Georgia, "Times New Roman", serif; width: 100%;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt .k {
+    font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 6px; width: 22px; height: 22px;
+    display: grid; place-items: center; flex: none;
+  }
+  .opt.correct { border-color: var(--ok); background: rgba(88,214,141,.13); }
+  .opt.wrong { border-color: var(--bad); background: rgba(255,123,114,.13); }
+  .opt.locked { opacity: .55; }
+  .opt.none-key { font-style: italic; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 16px; }
+
+  .feedback { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 13px; display: none; }
+  .feedback.show { display: block; }
+  .verdict { font-weight: 650; font-size: 16px; }
+  .verdict.ok { color: var(--ok); }
+  .verdict.no { color: var(--bad); }
+  .sayans { color: var(--muted); font-weight: 400; }
+  .note-inl { color: var(--warn); font-size: 14px; margin-top: 5px; }
+  .explain { color: var(--muted); font-size: 14.5px; margin-top: 6px; }
+  .explain b { color: var(--text); font-weight: 600; }
+
+  /* ---------- type-in mode ---------- */
+  .typebox { display: flex; gap: 10px; }
+  .typein {
+    flex: 1 1 auto; min-width: 0; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+    font-size: 22px; font-family: ui-serif, Georgia, "Times New Roman", serif;
+  }
+  .typein::placeholder { color: var(--muted); font-size: 16px; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .typein:focus { outline: none; border-color: var(--accent); }
+  .typebox .btn { flex: 0 0 auto; }
+  .typerule { color: var(--muted); font-size: 13.5px; margin-top: 9px; text-align: center; }
+  .typerule b { color: var(--warn); }
+
+  .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn {
+    background: var(--accent); color: #0b1020; border: 0; border-radius: 10px;
+    padding: 11px 18px; font-size: 15px; font-weight: 650; cursor: pointer; flex: 1 1 auto;
+  }
+  .btn.ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+  .btn:hover { filter: brightness(1.08); }
+  .hint { margin-top: 12px; font-size: 14px; color: var(--warn); min-height: 20px; }
+  .hint:empty { min-height: 0; }
+
+  .empty-state { text-align: center; padding: 40px 10px; color: var(--muted); }
+
+  /* ---------- panels ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(6,8,12,.72);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 24px 12px; overflow-y: auto; z-index: 40;
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    width: 100%; max-width: 640px; padding: 20px;
+  }
+  .sheet h2 { margin: 0 0 4px; font-size: 18px; }
+  .sheet .sheet-sub { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+  .sheet h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 18px 0 8px; }
+
+  .grid-keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .keychip {
+    display: flex; align-items: center; gap: 8px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; cursor: pointer;
+    font-size: 15px; user-select: none;
+  }
+  .keychip input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; flex: none; }
+  .keychip.on { border-color: var(--accent); background: rgba(110,168,254,.12); }
+  .keychip.adv .kl { color: var(--muted); }
+  .keychip .kl { font-weight: 600; }
+  .keychip .acc { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+  .chip-btn {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  .chip-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  .setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .setting:last-child { border-bottom: 0; }
+  .setting .s-label { font-size: 15px; }
+  .setting .s-desc { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .seg { display: flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; flex: none; }
+  .seg button { background: none; border: 0; color: var(--muted); padding: 8px 12px; font-size: 13.5px; cursor: pointer; }
+  .seg button.on { background: var(--accent); color: #0b1020; font-weight: 650; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 10px; margin-bottom: 6px; }
+  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .stat .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+
+  table.perf { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.perf td, table.perf th { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+  table.perf th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; }
+  table.perf td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  table.perf td.r { color: var(--muted); font-size: 12.5px; }
+  .pill {
+    display: inline-block; min-width: 34px; text-align: center; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; font-size: 12px;
+    font-variant-numeric: tabular-nums; color: var(--accent);
+  }
+  .pill.hot { color: var(--bad); border-color: var(--bad); }
+  table.perf .iv { color: var(--accent-2); font-size: 12px; }
+  .bar { height: 6px; background: var(--panel-2); border-radius: 999px; overflow: hidden; min-width: 60px; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+
+  .review { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  .review div { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .review .m { font-weight: 700; width: 16px; flex: none; }
+  .review .m.ok { color: var(--ok); }
+  .review .m.no { color: var(--bad); }
+  .review .r { color: var(--muted); font-size: 13px; }
+
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 14px; line-height: 1.6; }
+  footer.foot { color: var(--muted); font-size: 12.5px; text-align: center; padding: 22px 0 8px; }
+  kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 5px; padding: 1px 5px;
+  }
+  @media (max-width: 520px) {
+    .options { grid-template-columns: 1fr; }
+    .typebox { flex-direction: column; }
+    .wrap { padding: 12px; }
+    .card { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Roman Numeral Trainer</h1>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="btnKeys">Keys <span id="keyCount"></span></button>
+    <button class="iconbtn" id="btnSettings">Settings</button>
+    <button class="iconbtn" id="btnStats">Stats</button>
+    <button class="iconbtn" id="btnReset" title="Clear saved progress">Reset</button>
+  </header>
+
+  <main>
+    <div id="trainer">
+      <div class="meta-row">
+        <span><span class="badge keytag" id="mKey">—</span> <span class="sig" id="mSig"></span></span>
+        <span class="badge" id="mProgress">— / —</span>
+        <span class="badge">streak <strong id="mStreak">0</strong> · acc <strong id="mAcc">—</strong></span>
+      </div>
+
+      <div class="card">
+        <div class="prompt" id="prompt"></div>
+        <div class="options" id="options"></div>
+        <div class="hint" id="hint"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="actions" id="actions"></div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState" style="display:none">
+      <p><b>No keys selected.</b></p>
+      <p>Open <b>Keys</b> and tick at least one major and/or minor key to start training.</p>
+      <p><button class="btn" id="btnQuickStart" style="flex:none">Use common keys (C, G, D, A, E, F, Am, Em, Dm)</button></p>
+    </div>
+
+    <div id="summary" style="display:none">
+      <div class="card" style="text-align:center">
+        <h2 style="margin:2px 0 6px">Round complete</h2>
+        <p id="summaryLine" style="color:var(--muted);margin:0 0 16px"></p>
+        <div class="stat-grid" id="summaryStats"></div>
+        <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:22px 0 8px">Review</h3>
+        <div class="review" id="summaryReview"></div>
+        <div class="actions" style="margin-top:20px">
+          <button class="btn" id="btnNextRound">Next round</button>
+          <button class="btn ghost" id="btnExitSummary">Back to trainer</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <kbd>↵</kbd> check (skips if the box is empty) / continue · <kbd>H</kbd> hint · <kbd>1</kbd>–<kbd>5</kbd> pick (choose mode) · <kbd>K</kbd> keys · <kbd>S</kbd> settings
+  </footer>
+</div>
+
+<!-- ---------------- keys panel ---------------- -->
+<div class="overlay" id="ovKeys">
+  <div class="sheet">
+    <h2>Keys included in training</h2>
+    <p class="sheet-sub">Only the diatonic triads of the selected keys will be asked. Diminished triads are included where they occur diatonically.</p>
+
+    <div class="presets">
+      <button class="chip-btn" data-preset="common">Common (9)</button>
+      <button class="chip-btn" data-preset="circle">Circle of 5ths</button>
+      <button class="chip-btn" data-preset="allmaj">All major</button>
+      <button class="chip-btn" data-preset="allmin">All minor</button>
+      <button class="chip-btn" data-preset="all">Everything</button>
+      <button class="chip-btn" data-preset="none">Clear</button>
+    </div>
+
+    <h3>Major keys</h3>
+    <div class="grid-keys" id="gridMajor"></div>
+    <h3>Minor keys <span style="text-transform:none;letter-spacing:0">— natural minor (harmonic V excluded)</span></h3>
+    <div class="grid-keys" id="gridMinor"></div>
+
+    <p class="note">Keys in grey need 6 or 7 accidentals in the signature (C♯/G♭ major, D♭/A♭/D♯ minor). They are correct but rarely encountered — useful if you want to drill extreme spellings.</p>
+
+    <div class="actions">
+      <button class="btn" id="btnApplyKeys">Apply</button>
+      <button class="btn ghost" id="btnCancelKeys">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ---------------- settings panel ---------------- -->
+<div class="overlay" id="ovSettings">
+  <div class="sheet">
+    <h2>Settings</h2>
+    <p class="sheet-sub">Saved to this browser.</p>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Drill direction</div>
+        <div class="s-desc">Chord → numeral gives the key and chord, you pick the roman numeral. The reverse asks the opposite.</div>
+      </div>
+      <div class="seg" id="segDir">
+        <button data-v="both" class="on">Both</button>
+        <button data-v="c2n">Chord→#</button>
+        <button data-v="n2c">#→Chord</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Answer mode</div>
+        <div class="s-desc">Pick from options, or type the answer. Typing is stricter and tracks case more honestly, but slower.</div>
+      </div>
+      <div class="seg" id="segMode">
+        <button data-v="choose" class="on">Choose</button>
+        <button data-v="type">Type</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Diminished symbol</div>
+        <div class="s-desc">Applies to roman numerals only (vii° vs viio).</div>
+      </div>
+      <div class="seg" id="segDim">
+        <button data-v="°" class="on">vii°</button>
+        <button data-v="o">viio</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Non-diatonic traps</div>
+        <div class="s-desc">Occasionally ask about a chord borrowed from the parallel mode, with “not in this key” as the correct answer. Chord → numeral only.</div>
+      </div>
+      <div class="seg" id="segTrap">
+        <button data-v="0" class="on">Off</button>
+        <button data-v="1">On</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Answer choices</div>
+        <div class="s-desc">More choices means a longer drill, fewer lucky guesses. Choose mode only.</div>
+      </div>
+      <div class="seg" id="segChoices">
+        <button data-v="3">3</button>
+        <button data-v="4" class="on">4</button>
+        <button data-v="5">5</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Round length</div>
+        <div class="s-desc">Questions before the summary screen.</div>
+      </div>
+      <div class="seg" id="segRound">
+        <button data-v="10">10</button>
+        <button data-v="20" class="on">20</button>
+        <button data-v="0">Endless</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Show function labels</div>
+        <div class="s-desc">Adds tonic / predominant / dominant to the explanation.</div>
+      </div>
+      <div class="seg" id="segFunc">
+        <button data-v="0" class="on">Off</button>
+        <button data-v="1">On</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Adaptive scheduling</div>
+        <div class="s-desc">Ask the items you get wrong, take longest over, and haven’t seen lately. Off means fully random.</div>
+      </div>
+      <div class="seg" id="segAdaptive">
+        <button data-v="1" class="on">On</button>
+        <button data-v="0">Off</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Review interval</div>
+        <div class="s-desc" id="ivDesc">Auto: each item gets its own interval that grows when you get it right and collapses when you don’t.</div>
+      </div>
+      <div class="seg" id="segIv">
+        <button data-v="auto" class="on">Auto</button>
+        <button data-v="1">1d</button>
+        <button data-v="3">3d</button>
+        <button data-v="7">7d</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div>
+        <div class="s-label">Avoid repeats</div>
+        <div class="s-desc">Don’t ask the same item twice in a row.</div>
+      </div>
+      <div class="seg" id="segRepeat">
+        <button data-v="1" class="on">On</button>
+        <button data-v="0">Off</button>
+      </div>
+    </div>
+
+    <p class="note">Typing is forgiving about form: <b>vii°</b>, <b>viio</b>, <b>viiø</b>, <b>vii dim</b> and <b>7°</b> all mean the diminished triad; <b>Dm</b>, <b>Dmin</b>, <b>d minor</b> and <b>D-</b> all mean D minor. Accidentals may be typed as <b>#</b> or <b>b</b>, and enharmonic roots (D♭ for C♯) are accepted. Getting the letter-case wrong in a roman numeral still counts as correct, but you’ll get a note about it — the case is the part being taught.</p>
+
+    <div class="actions"><button class="btn" id="btnCloseSettings">Done</button></div>
+  </div>
+</div>
+
+<!-- ---------------- stats panel ---------------- -->
+<div class="overlay" id="ovStats">
+  <div class="sheet">
+    <h2>Progress</h2>
+    <p class="sheet-sub">Stored locally in this browser only.</p>
+    <div class="stat-grid" id="statTotals"></div>
+    <h3>By key</h3>
+    <table class="perf" id="statTable"></table>
+    <h3>Up next <span style="text-transform:none;letter-spacing:0">— highest priority first</span></h3>
+    <table class="perf" id="statQueue"></table>
+    <p class="note" id="queueNote"></p>
+    <div class="actions"><button class="btn" id="btnCloseStats">Close</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. THEORY
+   ============================================================ */
+
+const LETTERS = ["C","D","E","F","G","A","B"];
+const LETTER_PC = [0,2,4,5,7,9,11];
+
+// accidental string from semitone delta (-2 .. +2)
+function accFromDelta(d) {
+  d = ((d % 12) + 12) % 12;
+  if (d > 6) d -= 12;
+  switch (d) {
+    case  0: return "";
+    case  1: return "♯";
+    case -1: return "♭";
+    case  2: return "𝄪";
+    case -2: return "𝄫";
+    default: return "?";
+  }
+}
+
+const SIGN_SHARP_ORDER = ["F","C","G","D","A","E","B"];
+const SIGN_FLAT_ORDER  = ["B","E","A","D","G","C","F"];
+
+/* Keys: tonic letter index, tonic pc, key-signature accidentals
+   (positive = sharps, negative = flats). */
+const KEYS = [
+  // ---- major ----
+  { id:"C",   mode:"major", li:0, pc:0,  sig:0  },
+  { id:"G",   mode:"major", li:4, pc:7,  sig:1  },
+  { id:"D",   mode:"major", li:1, pc:2,  sig:2  },
+  { id:"A",   mode:"major", li:5, pc:9,  sig:3  },
+  { id:"E",   mode:"major", li:2, pc:4,  sig:4  },
+  { id:"B",   mode:"major", li:6, pc:11, sig:5  },
+  { id:"F♯",  mode:"major", li:3, pc:6,  sig:6  },
+  { id:"F",   mode:"major", li:3, pc:5,  sig:-1 },
+  { id:"B♭",  mode:"major", li:6, pc:10, sig:-2 },
+  { id:"E♭",  mode:"major", li:2, pc:3,  sig:-3 },
+  { id:"A♭",  mode:"major", li:5, pc:8,  sig:-4 },
+  { id:"D♭",  mode:"major", li:1, pc:1,  sig:-5 },
+  { id:"C♯",  mode:"major", li:0, pc:1,  sig:7,  adv:true },
+  { id:"G♭",  mode:"major", li:4, pc:6,  sig:-6, adv:true },
+
+  // ---- minor (natural) ----
+  { id:"A",   mode:"minor", li:5, pc:9,  sig:0  },
+  { id:"E",   mode:"minor", li:2, pc:4,  sig:1  },
+  { id:"B",   mode:"minor", li:6, pc:11, sig:2  },
+  { id:"F♯",  mode:"minor", li:3, pc:6,  sig:3  },
+  { id:"C♯",  mode:"minor", li:0, pc:1,  sig:4  },
+  { id:"G♯",  mode:"minor", li:4, pc:8,  sig:5  },
+  { id:"D",   mode:"minor", li:1, pc:2,  sig:-1 },
+  { id:"G",   mode:"minor", li:4, pc:7,  sig:-2 },
+  { id:"C",   mode:"minor", li:0, pc:0,  sig:-3 },
+  { id:"F",   mode:"minor", li:3, pc:5,  sig:-4 },
+  { id:"B♭",  mode:"minor", li:6, pc:10, sig:-5 },
+  { id:"D♭",  mode:"minor", li:1, pc:1,  sig:-6, adv:true },
+  { id:"A♭",  mode:"minor", li:5, pc:8,  sig:-7, adv:true },
+  { id:"D♯",  mode:"minor", li:1, pc:3,  sig:7,  adv:true },
+];
+
+function keyLabel(k) {
+  return k.mode === "major" ? k.id + " major" : k.id + " minor";
+}
+function keyId(k) { return keyLabel(k); }
+
+// number of sharps (+) or flats (-) in the signature
+function sigLabel(sig) {
+  if (sig === 0) return "no sharps or flats";
+  if (sig > 0) return sig + (sig === 7 ? " sharps" : sig === 1 ? " sharp" : " sharps");
+  const f = Math.abs(sig);
+  return f + (f === 1 ? " flat" : " flats");
+}
+function sigNotes(sig) {
+  if (sig > 0) return SIGN_SHARP_ORDER.slice(0, sig).map(l => l + "♯").join(" ") + "  (order of sharps: F C G D A E B)";
+  if (sig < 0) return SIGN_FLAT_ORDER.slice(0, -sig).map(l => l + "♭").join(" ") + "  (order of flats: B E A D G C F)";
+  return "C major / A minor signature";
+}
+
+/* Diatonic degrees. `iv` = semitones from tonic to the chord root. */
+const DEGREES = {
+  major: [
+    { num:"I",   q:"major", iv:0,  fn:"Tonic" },
+    { num:"ii",  q:"minor", iv:2,  fn:"Predominant" },
+    { num:"iii", q:"minor", iv:4,  fn:"Tonic" },
+    { num:"IV",  q:"major", iv:5,  fn:"Predominant" },
+    { num:"V",   q:"major", iv:7,  fn:"Dominant" },
+    { num:"vi",  q:"minor", iv:9,  fn:"Tonic" },
+    { num:"vii", q:"dim",   iv:11, fn:"Dominant" },
+  ],
+  minor: [
+    { num:"i",   q:"minor", iv:0,  fn:"Tonic" },
+    { num:"ii",  q:"dim",   iv:2,  fn:"Predominant" },
+    { num:"III", q:"major", iv:3,  fn:"Tonic" },
+    { num:"iv",  q:"minor", iv:5,  fn:"Predominant" },
+    { num:"v",   q:"minor", iv:7,  fn:"Dominant" },
+    { num:"VI",  q:"major", iv:8,  fn:"Dominant" },
+    { num:"VII", q:"major", iv:10, fn:"Tonic" },
+  ]
+};
+
+const QUAL = {
+  major: { third:4, fifth:7, suffix:"",    word:"major" },
+  minor: { third:3, fifth:7, suffix:"m",   word:"minor" },
+  dim:   { third:3, fifth:6, suffix:"dim", word:"diminished" },
+};
+
+const ORDINAL = ["1st","2nd","3rd","4th","5th","6th","7th"];
+const INTERVAL_NAME = {
+  0:"unison", 1:"minor 2nd", 2:"major 2nd", 3:"minor 3rd", 4:"major 3rd",
+  5:"perfect 4th", 6:"tritone", 7:"perfect 5th", 8:"minor 6th",
+  9:"major 6th", 10:"minor 7th", 11:"major 7th"
+};
+
+/* Build every diatonic triad of a key. Fully spelled from the key signature. */
+function triadsOf(key) {
+  const defs = DEGREES[key.mode];
+  return defs.map((d, idx) => {
+    const li = key.li;
+    const rootLetter = (li + idx) % 7;
+    const rootPc = (key.pc + d.iv) % 12;
+    const root = LETTERS[rootLetter] + accFromDelta(rootPc - LETTER_PC[rootLetter]);
+
+    const q = QUAL[d.q];
+    const thirdLetter = (rootLetter + 2) % 7;
+    const fifthLetter = (rootLetter + 4) % 7;
+    const thirdPc = (rootPc + q.third) % 12;
+    const fifthPc = (rootPc + q.fifth) % 12;
+    const third = LETTERS[thirdLetter] + accFromDelta(thirdPc - LETTER_PC[thirdLetter]);
+    const fifth = LETTERS[fifthLetter] + accFromDelta(fifthPc - LETTER_PC[fifthLetter]);
+
+    return {
+      idx, degree: idx + 1, ordinal: ORDINAL[idx],
+      numeral: d.num, q: d.q, qWord: q.word, fn: d.fn, iv: d.iv,
+      root, rootPc, third, fifth,
+      chord: root + q.suffix,
+      notes: [root, third, fifth],
+    };
+  });
+}
+
+function numeralOf(t, dimSym) {
+  return t.q === "dim" ? t.numeral + dimSym : t.numeral;
+}
+
+/* The parallel-mode key (C major <-> C minor) */
+function parallelKey(key) {
+  return KEYS.find(k => k.mode !== key.mode && k.li === key.li && k.pc === key.pc);
+}
+
+/* Non-diatonic traps: triads borrowed from the parallel mode. */
+function trapTriadsOf(key) {
+  const par = parallelKey(key);
+  if (!par) return [];
+  return triadsOf(par).map(t => ({ ...t, parallel: par }));
+}
+
+/* ============================================================
+   2. STATE
+   ============================================================ */
+
+const STORE_KEY = "roman-numeral-trainer.v1";
+const DEFAULTS = {
+  keys: ["C major","G major","D major","A major","E major","F major",
+         "A minor","E minor","D minor"],
+  direction: "both",
+  dimSym: "°",
+  answerMode: "choose",
+  traps: 0,
+  choices: 4,
+  roundLen: 20,
+  showFunc: 0,
+  noRepeat: 1,
+  adaptive: 1,
+  halfLife: 3,
+  autoIv: 1,
+  tAvg: null,
+  firstUse: null,
+  activeDays: [],
+  stats: {}
+};
+
+let S = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return structuredClone(DEFAULTS);
+    const p = JSON.parse(raw);
+    const out = { ...structuredClone(DEFAULTS), ...p, stats: p.stats || {} };
+    if (out.dimSym === "deg") out.dimSym = "°";   // migration: old token stored literally
+    // migrate the old {n, ok} stat shape to the scheduler's richer records
+    for (const [id, r] of Object.entries(out.stats)) {
+      if (r && typeof r.n === "number") {
+        out.stats[id] = { seen: r.n, wrong: r.n - (r.ok || 0), last: 0, t: null, lapses: 0, streak: 0 };
+      }
+    }
+    return out;
+  } catch { return structuredClone(DEFAULTS); }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch {}
+}
+
+/* runtime (not persisted) */
+let pos = 0;           // index in round
+let current = null;    // active question
+let streak = 0, bestStreak = 0, lastPick = "";
+let history = [];      // this round's results
+let sessionAnswered = 0, sessionCorrect = 0;
+let qShownAt = 0;      // ms timestamp of the last render, for response timing
+let pendingDraft = null; // key selection being edited in the panel
+
+/* ============================================================
+   3. HELPERS
+   ============================================================ */
+
+const $ = id => document.getElementById(id);
+const rnd = n => Math.floor(Math.random() * n);
+function shuffle(a) {
+  const r = a.slice();
+  for (let i = r.length - 1; i > 0; i--) { const j = rnd(i + 1); [r[i], r[j]] = [r[j], r[i]]; }
+  return r;
+}
+
+function activeKeys() {
+  const set = new Set(S.keys);
+  return KEYS.filter(k => set.has(keyId(k)));
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+}
+
+/* ============================================================
+   4. ADAPTIVE SCHEDULER
+   Every (key, direction, degree) pair is an "item" with its own history.
+   Priority blends four signals, all normalised to 0..1:
+     err   how often you get it wrong
+     lapse how many wrong answers in a row
+     slow  how long you take, relative to your own average
+     age   how long since you last saw it (saturating decay)
+   The highest-priority item is asked, with a little softmax jitter so the
+   order isn't mechanically identical every round.
+   ============================================================ */
+
+const ITEM_ID = (keyId, dir, deg) => `${keyId}|${dir}|${deg}`;
+const DAY = 86400000;
+
+function itemRec(id) {
+  let r = S.stats[id];
+  if (!r) r = S.stats[id] = { seen: 0, wrong: 0, last: 0, t: null, lapses: 0, streak: 0, iv: null };
+  return r;
+}
+function seenRec(id) { return S.stats[id] || null; }
+
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+/* ---- how fast you actually work, so intervals fit your pace ---- */
+
+function totalAnswers() {
+  let n = 0;
+  for (const r of Object.values(S.stats)) n += r.seen || 0;
+  return n;
+}
+function markActiveDay() {
+  const d = new Date();
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const arr = S.activeDays || (S.activeDays = []);
+  if (arr[arr.length - 1] !== key) { arr.push(key); if (arr.length > 400) arr.shift(); }
+  if (!S.firstUse) S.firstUse = Date.now();
+}
+
+/* questions answered per day you actually practised */
+function answerRate() { return totalAnswers() / Math.max(1, (S.activeDays || []).length); }
+
+/* days to walk the entire pool once at your current pace */
+function cycleDays() {
+  const rate = answerRate();
+  return rate > 0.2 ? poolSize() / rate : 21;
+}
+
+/* how much an item's interval lengthens per correct answer — a bigger pool or a
+   slower pace means intervals must grow faster or you never cycle through it */
+function growthFactor() { return clamp(Math.log2(Math.max(2, cycleDays())), 1.2, 2.6); }
+
+function maxInterval() { return clamp(cycleDays() * 3, 14, 365); }
+
+/* the half-life this individual item is currently on */
+function itemHalfLife(r) {
+  if (S.autoIv !== 1) return S.halfLife;
+  if (r.iv === null || r.iv === undefined) return r.streak >= 3 ? 7 : 0.4;
+  return r.iv;
+}
+
+function itemPriority(id, now) {
+  const r = seenRec(id);
+  if (!r || r.seen === 0) return { p: 1, r: null, why: "new" };
+
+  const err = clamp01(r.wrong / r.seen);
+  const lapse = clamp01(r.lapses / 4);
+  // "slow" = much slower than this user's own average, not an absolute bar
+  const ref = S.tAvg || 6;
+  const slow = r.t === null ? 0.5 : clamp01((r.t / ref - 1.1) / 1.4);
+  const half = Math.max(0.05, itemHalfLife(r));
+  const age = 1 - Math.exp(-(now - r.last) / (half * DAY));
+
+  const p = 0.35 * err + 0.15 * lapse + 0.20 * slow + 0.30 * clamp01(age);
+  const why = [];
+  if (err >= 0.4) why.push(`${Math.round(err * 100)}% wrong`);
+  if (lapse >= 0.25) why.push(`${r.lapses} in a row missed`);
+  if (slow >= 0.6) why.push(`${r.t.toFixed(1)}s`);
+  if (age >= 0.7) why.push(daysAgo(now - r.last));
+  return { p, r, why: why.join(" · ") || "due" };
+}
+
+function daysAgo(ms) {
+  const d = ms / DAY;
+  if (d >= 1) return `${Math.round(d)}d since last seen`;
+  const h = ms / 3600000;
+  return h >= 1 ? `${Math.round(h)}h since last seen` : `${Math.round(ms / 60000)}m since last seen`;
+}
+
+/* Every item the current key selection makes possible. */
+function poolSize() { return buildItemPool().length; }
+
+function buildItemPool() {
+  const keys = activeKeys();
+  const dirs = S.direction === "both" ? ["c2n", "n2c"] : [S.direction];
+  const pool = [];
+  for (const k of keys) {
+    for (const dir of dirs) {
+      for (let d = 1; d <= 7; d++) pool.push({ key: k, dir, deg: d, trap: false });
+      if (dir === "c2n" && S.traps === 1) {
+        const par = trapTriadsOf(k);
+        for (let d = 1; d <= par.length; d++) pool.push({ key: k, dir, deg: d, trap: true });
+      }
+    }
+  }
+  return pool;
+}
+
+/* Weighted in both directions: a trap item is discounted so unseen traps don't
+   flood a fresh queue, and a failing trap climbs faster than a passing one drops. */
+const trapWeight = p => 0.55 * p + 0.45 * p * p;
+
+function chooseItem() {
+  const pool = buildItemPool();
+  if (!pool.length) return null;
+
+  if (S.adaptive !== 1) return pool[rnd(pool.length)];
+
+  const now = Date.now();
+
+  const scored = pool.map(it => {
+    const id = ITEM_ID(keyId(it.key), it.dir, it.trap ? "x" + it.deg : it.deg);
+    const { p, why } = itemPriority(id, now);
+    return { ...it, id, p: it.trap ? trapWeight(p) : p, why };
+  });
+
+  // top slice, then softmax pick so it's greedy but not rigid
+  const top = scored.slice().sort((a, b) => b.p - a.p).slice(0, Math.min(8, scored.length));
+  const T = 0.12;
+  const w = top.map(x => Math.exp(x.p / T));
+  const sum = w.reduce((a, b) => a + b, 0);
+  let r = Math.random() * sum;
+  for (let i = 0; i < top.length; i++) { r -= w[i]; if (r <= 0) return top[i]; }
+  return top[top.length - 1];
+}
+
+/* The "up next" list, for the stats panel. */
+function rankedItems(limit = 10) {
+  const now = Date.now();
+  return buildItemPool().map(it => {
+    const id = ITEM_ID(keyId(it.key), it.dir, it.trap ? "x" + it.deg : it.deg);
+    const { p, r, why } = itemPriority(id, now);
+    return { it, id, p: it.trap ? trapWeight(p) : p, r, why };
+  }).sort((a, b) => b.p - a.p).slice(0, limit);
+}
+
+function recordAnswer(q, ok, seconds, skipped) {
+  markActiveDay();
+  const id = ITEM_ID(keyId(q.key), q.direction, q.trap ? "x" + q.t.degree : q.t.degree);
+  const r = itemRec(id);
+  r.seen++;
+
+  // adapt this item's own review interval: grow on success, collapse on failure
+  if (S.autoIv === 1) {
+    if (ok) r.iv = clamp((r.iv || 0.25) * growthFactor(), 0.25, maxInterval());
+    else if (skipped) r.iv = Math.min(r.iv || 0.15, 0.3);
+    else r.iv = 0.12;
+  }
+
+  if (skipped) {
+    // a skip tells us you didn't know it, but it's not an error and it doesn't
+    // reset the "due" clock — leaving `last` alone keeps the item overdue
+    r.streak = 0;
+    r.lapses++;
+  } else {
+    r.last = Date.now();
+    if (ok) { r.streak++; r.lapses = 0; }
+    else { r.streak = 0; r.lapses++; r.wrong++; }
+  }
+  if (seconds !== null) {
+    const s = Math.min(90, Math.max(0.4, seconds));
+    r.t = r.t === null ? s : r.t * 0.6 + s * 0.4;
+    S.tAvg = S.tAvg === null ? s : S.tAvg * 0.9 + s * 0.1;
+  }
+  save();
+}
+
+/* ============================================================
+   5. QUESTION GENERATION
+   ============================================================ */
+
+function makeQuestion() {
+  let chosen = chooseItem();
+  if (!chosen) return null;
+
+  // no immediate repeat, unless adaptive scheduling is off
+  if (S.noRepeat === 1) {
+    const tries = 12;
+    for (let i = 0; i < tries && chosen.id === lastPick; i++) chosen = chooseItem() || chosen;
+  }
+  lastPick = chosen.id;
+
+  const { key, dir, deg, trap } = chosen;
+  const t = trap ? trapTriadsOf(key)[deg - 1] : triadsOf(key)[deg - 1];
+  return buildQuestion({ key, t, trap }, dir);
+}
+
+function buildQuestion({ key, t, trap }, direction) {
+  const siblings = triadsOf(key);
+  const nChoices = S.choices;
+  const options = [];
+  const correct = trap ? "NOTDIA" : (direction === "c2n" ? numeralOf(t, S.dimSym) : t.chord);
+  options.push(correct);
+
+  if (trap) {
+    const others = shuffle(siblings.filter(x => x.chord !== t.chord))
+      .map(x => direction === "c2n" ? numeralOf(x, S.dimSym) : x.chord);
+    // reuse numerals for chord->numeral questions, chords otherwise
+    if (direction === "n2c") options.push(...shuffle(siblings.filter(x => x.chord !== t.chord)).map(x => x.chord).slice(0, nChoices - 1));
+    else options.push(...others.slice(0, nChoices - 1));
+    if (options.length < nChoices) {
+      const extra = shuffle(siblings).map(x => direction === "c2n" ? numeralOf(x, S.dimSym) : x.chord);
+      for (const e of extra) { if (options.length >= nChoices) break; if (!options.includes(e)) options.push(e); }
+    }
+  } else {
+    // distractors: prefer the neighbouring degrees, then fill randomly
+    const ranked = siblings
+      .filter(x => x.degree !== t.degree)
+      .slice()
+      .sort((a, b) => Math.abs(a.degree - t.degree) - Math.abs(b.degree - t.degree));
+    const need = nChoices - 1;
+    const chosen = ranked.slice(0, Math.min(need, Math.min(3, ranked.length)));
+    const rest = shuffle(ranked.filter(x => !chosen.includes(x)));
+    const pool2 = chosen.concat(rest.slice(0, need - chosen.length));
+    for (const x of pool2) options.push(direction === "c2n" ? numeralOf(x, S.dimSym) : x.chord);
+  }
+
+  const opts = shuffle(options).slice(0, Math.max(2, nChoices));
+  if (!opts.includes(correct)) opts[rnd(opts.length)] = correct;
+
+  return { key, t, trap, direction, correct, options: shuffle(opts) };
+}
+
+/* ============================================================
+   5. EXPLANATIONS
+   ============================================================ */
+
+function explain(q) {
+  const { key, t, trap, direction } = q;
+  const keyName = keyLabel(key);
+  const par = t.parallel;
+  const fnTxt = S.showFunc === 1 ? ` <b>Function:</b> ${t.fn}.` : "";
+
+  if (trap) {
+    const parTriads = triadsOf(par);
+    const eq = parTriads.find(x => x.chord === t.chord);
+    const inKey = triadsOf(key).find(x => x.chord === t.chord);
+    let s = `<b>${esc(t.chord)}</b> is not diatonic to <b>${esc(keyName)}</b>. It comes from the parallel <b>${esc(keyLabel(par))}</b>, where it is <b>${numeralOf(eq, S.dimSym)}</b> (${esc(t.notes.join(" – "))}).`;
+    if (inKey) {
+      s += ` The root <b>${esc(t.root)}</b> does exist in ${esc(keyName)}, but the chord quality there is ${inKey.qWord} (<b>${esc(inKey.chord)}</b> = ${numeralOf(inKey, S.dimSym)}).`;
+    } else {
+      s += ` The root <b>${esc(t.root)}</b> isn't in the ${esc(keyName)} scale at all.`;
+    }
+    s += fnTxt;
+    return s;
+  }
+
+  const num = numeralOf(t, S.dimSym);
+  const rootInfo = t.iv === 0
+    ? `built on the tonic <b>${esc(t.root)}</b> (unison)`
+    : `built on the <b>${esc(t.ordinal)}</b> degree <b>${esc(t.root)}</b>, a ${INTERVAL_NAME[t.iv]} above the tonic (${t.iv} semitone${t.iv === 1 ? "" : "s"})`;
+  const qWord = t.q === "dim" ? "a diminished triad" : t.q === "minor" ? "a minor triad" : "a major triad";
+
+  if (direction === "c2n") {
+    return `In <b>${esc(keyName)}</b>, ${esc(t.chord)} is ${rootInfo}. Stacking thirds from there gives <b>${esc(t.notes.join(" – "))}</b> — ${qWord} → <b>${esc(num)}</b>.${fnTxt}`;
+  }
+  return `In <b>${esc(keyName)}</b>, <b>${esc(num)}</b> is ${rootInfo}. Stacking thirds from ${esc(t.root)} gives <b>${esc(t.notes.join(" – "))}</b> → <b>${esc(t.chord)}</b>, ${qWord}.${fnTxt}`;
+}
+
+/* ============================================================
+   5b. ANSWER PARSERS (typing mode)
+   ============================================================ */
+
+const ROMAN_VAL = { i: 1, v: 5, x: 10 };
+const ROMAN_TO_INT = { 1:"I", 2:"ii", 3:"iii", 4:"iv", 5:"v", 6:"vi", 7:"vii" };
+
+function romanToInt(s) {
+  let n = 0, prev = 0;
+  for (let i = s.length - 1; i >= 0; i--) {
+    const v = ROMAN_VAL[s[i]];
+    if (v === undefined) return NaN;
+    n += v < prev ? -v : v;
+    prev = v;
+  }
+  return n;
+}
+
+/* Accepts: vi, VI, vii°, viio, viiø, vii dim, vii deg, iv°, 7°, 4 */
+function parseRomanInput(str) {
+  const orig = String(str);
+  const low = orig.toLowerCase();
+  const wordDim = /dim|deg/.test(low);
+  const body = low
+    .replace(/[\s\-_.]/g, "")
+    .replace(/diminished|dim|deg|major|maj|min/g, "")
+    .replace(/[°ºø]/g, "o");
+
+  const rm = body.match(/^([ivx]+)(o?)$/);
+  const dm = body.match(/^([1-7])(o?)$/);
+  if (!rm && !dm) return null;
+  const lower = rm ? rm[1] : ROMAN_TO_INT[Number(dm[1])];
+  const degree = rm ? romanToInt(lower) : Number(dm[1]);
+  if (!(degree >= 1 && degree <= 7)) return null;
+  const dim = wordDim || /[°ºø]/.test(orig) || (rm ? rm[2] === "o" : dm[2] === "o");
+
+  // original-case letters, from the same cleaned text
+  const cleanOrig = orig
+    .replace(/diminished|dim|deg|major|maj|min/gi, "")
+    .replace(/[\s\-_.°ºø]/g, "");
+  const letters = (cleanOrig.match(/[ivx]+/) || [lower])[0];
+  return { degree, dim, letters };
+}
+
+/* Accepts: Dm, Dmin, d minor, D-, Edim, C#dim, C♯°, Bbmaj, Cbbm — rejects sevenths */
+function parseChordInput(str) {
+  const s = String(str).toLowerCase().trim()
+    .replace(/𝄪/g, "##").replace(/𝄫/g, "bb")
+    .replace(/♯/g, "#").replace(/♭/g, "b")
+    .replace(/[\s\-_.]/g, "");
+  if (!s) return null;
+  if (/[0-9]/.test(s)) return { error: "Triads only — 7th chords aren’t part of this drill." };
+  if (!/^[a-g]/.test(s)) return null;
+
+  const letter = s[0];
+  let rest = s.slice(1);
+  let delta = 0;
+  while (rest[0] === "#" || rest[0] === "b") { delta += rest[0] === "#" ? 1 : -1; rest = rest.slice(1); }
+
+  let quality = "major";
+  if (rest === "") { /* major */ }
+  else if (/^(dim|diminished|o)$/.test(rest) || /^[°ºø]$/.test(rest)) quality = "dim";
+  else if (/^(m|min|minor)$/.test(rest)) quality = "minor";
+  else if (/^(maj|major)$/.test(rest)) quality = "major";
+  else return null;
+
+  const pc = ((((LETTER_PC["cdefgab".indexOf(letter)] + delta) % 12) + 12) % 12);
+  const spelling = letter.toUpperCase() + (delta > 0 ? "♯".repeat(delta) : "♭".repeat(-delta));
+  return { pc, quality, spelling };
+}
+
+const NONE_WORDS = /^(x|n|no|none|nd|not|out|outside|notdia|not ?(in|di)|not in key|not in this key|not diatonic|non ?-?diatonic)$/i;
+function isNoneAnswer(str) { return NONE_WORDS.test(String(str).trim()); }
+
+function answerLabel(v) { return v === "NOTDIA" ? "not in this key" : v; }
+
+/* Single grader used by both choose and type mode.
+   input === null means skipped. */
+function gradeAnswer(q, input) {
+  const expected = q.correct;
+
+  if (expected === "NOTDIA") {
+    const said = isNoneAnswer(input);
+    return said
+      ? { ok: true }
+      : { ok: false, note: `“${esc(input)}” <i>is</i> a chord of the key — the right answer here was <b>not in this key</b>.` };
+  }
+
+  if (q.direction === "c2n") {
+    const p = parseRomanInput(input);
+    const e = parseRomanInput(expected);
+    if (!p) return { ok: false, bad: true, note: `Couldn’t read <b>${esc(input)}</b> as a roman numeral — try <b>${esc(expected)}</b> style.` };
+    if (p.degree !== e.degree) {
+      let note = "";
+      if (p.letters.toUpperCase() === e.letters) {
+        note = `Wrong degree — <b>${esc(p.letters)}</b> is the ${ROMAN_TO_INT[p.degree]} scale degree, not ${esc(e.letters)}. Remember: I, IV, V are major (uppercase); i, iv, v are minor (lowercase).`;
+      }
+      return { ok: false, note };
+    }
+    if (p.dim !== e.dim) {
+      return { ok: false, note: p.dim
+        ? `You marked it diminished. ${esc(keyLabel(q.key))} wants a ${q.t.qWord} triad here → <b>${esc(expected)}</b>.`
+        : `You left off the diminished marker. It is a diminished triad → <b>${esc(expected)}</b>.` };
+    }
+    const note = p.letters === e.letters ? ""
+      : `Correct degree and quality, but case matters here: <b>${esc(e.letters)}</b>, not <b>${esc(p.letters)}</b>.`;
+    return { ok: true, note };
+  }
+
+  const p = parseChordInput(input);
+  const e = parseChordInput(expected);
+  if (!e) return { ok: String(input).trim() === String(expected).trim() };
+  if (p && p.error) return { ok: false, bad: true, note: esc(p.error) };
+  if (!p) return { ok: false, bad: true, note: `Couldn’t read <b>${esc(input)}</b> as a chord — try <b>Dm</b>, <b>Bb</b> or <b>Edim</b>.` };
+  if (p.pc === e.pc && p.quality === e.quality) {
+    const note = p.spelling === e.spelling ? ""
+      : `Right pitch class, but <b>${esc(expected)}</b> is the correct spelling in ${esc(keyLabel(q.key))}.`;
+    return { ok: true, note };
+  }
+  if (p.pc === e.pc) {
+    return { ok: false, note: `Right root, wrong quality. <b>${esc(expected)}</b> is the ${q.t.qWord} triad on that degree.` };
+  }
+  return { ok: false };
+}
+
+/* ============================================================
+   6. RENDERING
+   ============================================================ */
+
+function questionText(q) {
+  const { key, t, direction } = q;
+  const keyName = keyLabel(key);
+  if (direction === "c2n") {
+    return {
+      label: "Chord → roman numeral",
+      value: esc(t.chord),
+      sub: `in the key of <span class="keytag">${esc(keyName)}</span>`
+    };
+  }
+  return {
+    label: "Roman numeral → chord",
+    value: esc(numeralOf(t, S.dimSym)),
+    sub: `in the key of <span class="keytag">${esc(keyName)}</span>`
+  };
+}
+
+function renderQuestion() {
+  qShownAt = Date.now();
+  const p = questionText(current);
+  $("prompt").innerHTML =
+    `<div class="label">${p.label}</div><div class="value">${p.value}</div><div class="sub">${p.sub}</div>`;
+
+  if (S.answerMode === "type") {
+    const hintTag = current.direction === "c2n" ? "e.g. iv, V, vii°" : "e.g. Dm, Bb, Edim";
+    $("options").innerHTML =
+      `<form class="typebox" id="typeForm" autocomplete="off">
+         <input id="typeInput" class="typein" type="text" inputmode="latin"
+                placeholder="${hintTag}" spellcheck="false" autocapitalize="off" autocorrect="off">
+         <button class="btn" type="submit" id="btnSubmit">Check <span style="opacity:.6">↵</span></button>
+       </form>
+       ${current.trap ? `<div class="typerule">One of the answers here is <b>not in this key</b> — type it if you spot it.</div>` : ""}`;
+    $("typeForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = $("typeInput").value;
+      if (!v.trim()) return;
+      submitTyped(v);
+    });
+    $("typeInput").focus();
+  } else {
+    $("options").innerHTML = current.options.map((o, i) => {
+      const isNone = o === "NOTDIA";
+      const label = isNone ? "not in this key" : o;
+      return `<button class="opt${isNone ? " none-key" : ""}" data-i="${i}">
+        <span class="k">${i + 1}</span><span>${esc(label)}</span></button>`;
+    }).join("");
+  }
+
+  $("hint").innerHTML = "";
+  $("feedback").className = "feedback";
+  $("feedback").innerHTML = "";
+  const skipKey = S.answerMode === "type" ? "" : ` <span style="opacity:.6">↵</span>`;
+  $("actions").innerHTML = `<button class="btn ghost" id="btnHint">Hint <span class="kbd-hint" style="opacity:.6">H</span></button>
+                            <button class="btn" id="btnSkip">Skip${skipKey}</button>`;
+  $("btnHint").onclick = showHint;
+  $("btnSkip").onclick = () => answer(null);
+  updateMeta();
+}
+
+function updateMeta() {
+  $("mKey").textContent = keyLabel(current.key);
+  $("mKey").title = sigNotes(current.key.sig);
+  $("mSig").textContent = sigLabel(current.key.sig);
+  if (S.roundLen > 0) $("mProgress").textContent = `${pos + 1} / ${S.roundLen}`;
+  else $("mProgress").textContent = `#${pos + 1}`;
+
+  const tot = sessionAnswered;
+  $("mAcc").textContent = tot ? Math.round(sessionCorrect / tot * 100) + "%" : "—";
+  $("mStreak").textContent = streak;
+}
+
+function showHint() {
+  const { t } = current;
+  $("hint").innerHTML = current.trap
+    ? `Hint: this chord comes from the parallel mode, not from ${esc(keyLabel(current.key))}.`
+    : `Hint: <b>${esc(t.root)}</b> is the ${esc(t.ordinal)} degree of ${esc(keyLabel(current.key))} — ${t.iv} semitone${t.iv === 1 ? "" : "s"} above the tonic.`;
+}
+
+function submitTyped() {
+  if (!current || $("feedback").classList.contains("show")) return;
+  const raw = $("typeInput").value;
+  if (!raw.trim()) return;
+  answer({ typed: raw, shown: raw.trim() });
+}
+
+/* input: null = skip, {typed, shown} for typing, {index} for choosing */
+function answer(input) {
+  if (!current || $("feedback").classList.contains("show")) return;
+  const q = current;
+
+  const skipped = input === null;
+  let shown, given;
+  if (input && input.typed !== undefined) { shown = input.typed.trim(); given = input.typed; }
+  else if (input && input.index !== undefined) {
+    shown = answerLabel(q.options[input.index]);
+    given = shown;
+  }
+  else { shown = null; given = null; }
+
+  const { ok, note } = skipped ? { ok: false } : gradeAnswer(q, given);
+
+  if (!skipped) {
+    document.querySelectorAll("#options .opt").forEach(b => {
+      b.disabled = true;
+      const val = b.querySelector("span:last-child").textContent;
+      if (val === answerLabel(q.correct)) b.classList.add("correct");
+      if (input.index !== undefined && Number(b.dataset.i) === input.index && !ok) b.classList.add("wrong");
+      if (input.index !== undefined && Number(b.dataset.i) !== input.index) b.classList.add("locked");
+    });
+  }
+
+  if (ok) { streak++; bestStreak = Math.max(bestStreak, streak); }
+  else streak = 0;
+  sessionAnswered++;
+  if (ok) sessionCorrect++;
+
+  const seconds = qShownAt ? (Date.now() - qShownAt) / 1000 : null;
+  recordAnswer(q, ok, seconds, skipped);
+
+  history.push({ q, chosen: shown, ok });
+
+  const right = answerLabel(q.correct);
+  const verdict = skipped
+    ? `<span class="verdict no">Skipped.</span> The answer was <b>${esc(right)}</b>.`
+    : ok
+      ? `<span class="verdict ok">Correct.</span> <span class="sayans">${esc(right)}</span>`
+      : `<span class="verdict no">Not quite.</span> You answered <b>${esc(shown)}</b>. It was <b>${esc(right)}</b>.`;
+  $("feedback").innerHTML =
+    `${verdict}${note ? `<div class="note-inl">${note}</div>` : ""}<div class="explain">${explain(q)}</div>`;
+  $("feedback").className = "feedback show";
+
+  const last = S.roundLen === 0 || pos + 1 >= S.roundLen;
+  $("actions").innerHTML = `<button class="btn" id="btnNext">${last ? "Finish round" : "Next"} <span style="opacity:.6">↵</span></button>`;
+  $("btnNext").onclick = nextQuestion;
+  $("btnNext").focus();
+  updateMeta();
+}
+
+function nextQuestion() {
+  pos++;
+  if (S.roundLen > 0 && pos >= S.roundLen) { showSummary(); return; }
+  current = makeQuestion();
+  renderQuestion();
+}
+
+function startRound() {
+  pos = 0; history = [];
+  sessionAnswered = 0; sessionCorrect = 0; streak = 0;
+  current = makeQuestion();
+  $("summary").style.display = "none";
+  $("trainer").style.display = "block";
+  renderQuestion();
+}
+
+function showSummary() {
+  const correct = history.filter(h => h.ok).length;
+  const total = history.length;
+  const acc = total ? Math.round(correct / total * 100) : 0;
+  $("summaryLine").textContent = `${correct} of ${total} correct (${acc}%) · best streak ${bestStreak}`;
+  $("summaryStats").innerHTML = [
+    ["Correct", correct],
+    ["Accuracy", acc + "%"],
+    ["Best streak", bestStreak],
+    ["Asked", total],
+  ].map(([l, v]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  $("summaryReview").innerHTML = history.map(h => {
+    const q = h.q;
+    const ans = answerLabel(q.correct);
+    const yours = h.chosen === null ? "skipped" : h.chosen;
+    return `<div><span class="m ${h.ok ? "ok" : "no"}">${h.ok ? "✓" : "✗"}</span>
+      <span><b>${esc(q.t.chord)}</b> ${numeralOf(q.t, S.dimSym)} in ${esc(keyLabel(q.key))}</span>
+      <span class="r">yours: ${esc(yours)}</span></div>`;
+  }).join("");
+
+  $("trainer").style.display = "none";
+  $("summary").style.display = "block";
+}
+
+/* ============================================================
+   7. KEYS PANEL
+   ============================================================ */
+
+function openKeys() {
+  pendingDraft = new Set(S.keys);
+  renderKeyGrid();
+  openOverlay("ovKeys");
+  updateKeyCount();
+}
+
+function renderKeyGrid() {
+  const build = (mode) => {
+    const wrap = $(mode === "major" ? "gridMajor" : "gridMinor");
+    wrap.innerHTML = KEYS.filter(k => k.mode === mode).map(k => {
+      const id = keyId(k);
+      return `<label class="keychip${pendingDraft.has(id) ? " on" : ""}${k.adv ? " adv" : ""}">
+        <input type="checkbox" data-kid="${esc(id)}" ${pendingDraft.has(id) ? "checked" : ""}>
+        <span class="kl">${esc(k.id)}</span>
+        <span class="acc">${k.sig === 0 ? "–" : (k.sig > 0 ? "+" + k.sig + "♯" : k.sig + "♭")}</span>
+      </label>`;
+    }).join("");
+  };
+  build("major"); build("minor");
+  wrapAll(".grid-keys input", i => {
+    const id = i.dataset.kid;
+    if (i.checked) pendingDraft.add(id); else pendingDraft.delete(id);
+    i.closest(".keychip").classList.toggle("on", i.checked);
+    updateKeyCount();
+  });
+}
+
+const PRESETS = {
+  common: ["C major","G major","D major","A major","E major","F major","A minor","E minor","D minor"],
+  circle: KEYS.filter(k => !k.adv).map(keyId),
+  allmaj: KEYS.filter(k => k.mode === "major").map(keyId),
+  allmin: KEYS.filter(k => k.mode === "minor").map(keyId),
+  all: KEYS.map(keyId),
+  none: []
+};
+
+function updateKeyCount() {
+  const n = pendingDraft ? pendingDraft.size : S.keys.length;
+  $("keyCount").textContent = n ? `(${n})` : "(none)";
+}
+
+function applyKeys() {
+  S.keys = [...pendingDraft];
+  save();
+  closeOverlay("ovKeys");
+  updateKeyCount();
+  ensureRunning();
+}
+
+function ensureRunning() {
+  const ok = activeKeys().length > 0;
+  $("emptyState").style.display = ok ? "none" : "block";
+  $("trainer").style.display = ok && $("summary").style.display === "none" ? "block" : "none";
+  if (ok && $("summary").style.display === "none") {
+    if (!current || !activeKeys().some(k => keyId(k) === keyId(current.key))) {
+      current = makeQuestion(); renderQuestion();
+    }
+  }
+}
+
+/* ============================================================
+   8. SETTINGS PANEL
+   ============================================================ */
+
+function syncSeg(id, value) {
+  document.querySelectorAll("#" + id + " button").forEach(b => {
+    b.classList.toggle("on", b.dataset.v === String(value));
+  });
+}
+function readSeg(id) {
+  const on = document.querySelector("#" + id + " button.on");
+  return on ? on.dataset.v : null;
+}
+
+function updateIvDesc() {
+  const el = $("ivDesc");
+  if (!el) return;
+  el.textContent = S.autoIv === 1
+    ? `Auto — right now: ${poolSize()} items, ~${answerRate().toFixed(1)} questions per practice day, so one full cycle is ≈${cycleDays().toFixed(0)} days and intervals grow ×${growthFactor().toFixed(2)} per correct answer.`
+    : `Fixed ${S.halfLife} day half-life for every item, ignoring individual performance.`;
+}
+
+function openSettings() {
+  syncSeg("segDir", S.direction);
+  syncSeg("segMode", S.answerMode);
+  syncSeg("segDim", S.dimSym);
+  syncSeg("segTrap", S.traps);
+  syncSeg("segChoices", S.choices);
+  syncSeg("segRound", S.roundLen);
+  syncSeg("segFunc", S.showFunc);
+  syncSeg("segAdaptive", S.adaptive);
+  syncSeg("segIv", S.autoIv === 1 ? "auto" : String(S.halfLife));
+  syncSeg("segRepeat", S.noRepeat);
+  updateIvDesc();
+  openOverlay("ovSettings");
+}
+
+const SEGS = {
+  segDir: v => { S.direction = v; },
+  segMode: v => { S.answerMode = v; },
+  segDim: v => { S.dimSym = v; },
+  segTrap: v => { S.traps = Number(v); },
+  segChoices: v => { S.choices = Number(v); },
+  segRound: v => { S.roundLen = Number(v); },
+  segFunc: v => { S.showFunc = Number(v); },
+  segAdaptive: v => { S.adaptive = Number(v); },
+  segIv: v => { if (v === "auto") S.autoIv = 1; else { S.autoIv = 0; S.halfLife = Number(v); } },
+  segRepeat: v => { S.noRepeat = Number(v); },
+};
+
+function bindSegs() {
+  for (const [id, fn] of Object.entries(SEGS)) {
+    $("" + id).addEventListener("click", e => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      syncSeg(id, b.dataset.v);
+      fn(b.dataset.v);
+      save();
+      updateIvDesc();
+      if (current && !$("feedback").classList.contains("show")) {
+        current = makeQuestion(); renderQuestion();
+      }
+    });
+  }
+}
+
+/* ============================================================
+   9. STATS PANEL
+   ============================================================ */
+
+function openStats() {
+  const entries = Object.entries(S.stats).filter(([, r]) => r.seen > 0);
+  const totalN = entries.reduce((a, [, r]) => a + r.seen, 0);
+  const totalWrong = entries.reduce((a, [, r]) => a + r.wrong, 0);
+  const acc = totalN ? Math.round((totalN - totalWrong) / totalN * 100) : 0;
+  const medT = median(entries.map(([, r]) => r.t).filter(t => t !== null));
+
+  $("statTotals").innerHTML = [
+    ["Answered", totalN],
+    ["Accuracy", totalN ? acc + "%" : "—"],
+    ["Best streak", bestStreak],
+    ["Median time", medT === null ? "—" : medT.toFixed(1) + "s"],
+  ].map(([l, v]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  if (!entries.length) {
+    $("statTable").innerHTML = `<tr><td style="color:var(--muted);padding:14px 8px">No answers recorded yet.</td></tr>`;
+  } else {
+    const byKey = {};
+    for (const [k, r] of entries) {
+      const [kid] = k.split("|");
+      byKey[kid] = byKey[kid] || { seen: 0, wrong: 0 };
+      byKey[kid].seen += r.seen; byKey[kid].wrong += r.wrong;
+    }
+    const rows = Object.entries(byKey)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([kid, r]) => {
+        const p = Math.round((r.seen - r.wrong) / r.seen * 100);
+        return `<tr>
+          <td>${esc(kid)}</td>
+          <td class="n">${r.seen - r.wrong}/${r.seen}</td>
+          <td style="width:40%"><div class="bar"><i style="width:${p}%"></i></div></td>
+          <td class="n" style="width:52px">${p}%</td>
+        </tr>`;
+      }).join("");
+    $("statTable").innerHTML =
+      `<tr><th>Key</th><th class="n">Score</th><th></th><th class="n">Acc</th></tr>` + rows;
+  }
+
+  renderQueue();
+  $("queueNote").innerHTML =
+    `Priority = 35% error rate + 15% consecutive misses + 20% slowness + 30% time since last seen. Never-asked items score 100 and lead the queue.<br><br>`
+    + (S.autoIv === 1
+      ? `Intervals are <b>per item</b> and recomputed from your own history: ${poolSize()} items in the pool, ~${answerRate().toFixed(1)} questions per practice day over ${(S.activeDays || []).length} day${(S.activeDays || []).length === 1 ? "" : "s"} → a full cycle is ≈<b>${cycleDays().toFixed(0)} days</b>, so a correct answer lengthens that item's interval by ×${growthFactor().toFixed(2)} (capped at ${Math.round(maxInterval())} days) and a wrong one drops it to ~3 hours.`
+      : `Every item uses a fixed ${S.halfLife}-day half-life. Switch Review interval back to <b>Auto</b> to let each item learn its own.`);
+  openOverlay("ovStats");
+}
+
+function median(a) {
+  if (!a.length) return null;
+  const s = a.slice().sort((x, y) => x - y);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function itemLabel(it) {
+  const dir = it.dir === "c2n" ? "chord → #" : "# → chord";
+  if (it.trap) return `${it.key.id} · ${dir} · not-in-key`;
+  return `${it.key.id} ${it.key.mode === "major" ? "maj" : "min"} · ${dir} · ${it.deg}st`;
+}
+
+function renderQueue() {
+  const top = rankedItems(10);
+  $("statQueue").innerHTML = `<tr><th>Item</th><th class="n">Wrong</th><th>Why</th><th class="n">Pri</th><th class="n r">Every</th></tr>`
+    + top.map(({ it, p, r, why }) => {
+    const pct = Math.round(p * 100);
+    const iv = r ? `<span class="iv">${ivLabel(r)}</span>` : "";
+    return `<tr>
+      <td>${esc(itemLabel(it))}</td>
+      <td class="n">${r ? `${r.wrong}/${r.seen}` : "—"}</td>
+      <td class="r">${esc(why)}${r && r.t !== null ? ` · ${r.t.toFixed(1)}s` : ""}</td>
+      <td class="n" style="width:52px"><span class="pill${pct >= 80 ? " hot" : ""}">${pct}</span></td>
+      <td class="n r">${iv}</td>
+    </tr>`;
+  }).join("");
+}
+
+function ivLabel(r) {
+  if (S.autoIv !== 1) return S.halfLife + "d";
+  const h = itemHalfLife(r);
+  if (h >= 1) return (h < 10 ? h.toFixed(1) : Math.round(h)) + "d";
+  const hrs = h * 24;
+  return (hrs >= 1 ? hrs.toFixed(0) + "h" : Math.round(hrs * 60) + "m");
+}
+
+/* ============================================================
+   10. OVERLAYS + WIRING
+   ============================================================ */
+
+function openOverlay(id) { $(id).classList.add("open"); }
+function closeOverlay(id) { $(id).classList.remove("open"); }
+function closeAll() { document.querySelectorAll(".overlay.open").forEach(o => o.classList.remove("open")); }
+
+function wrapAll(sel, fn) {
+  document.addEventListener("change", e => {
+    const el = e.target.closest(sel);
+    if (el) fn(el);
+  });
+}
+
+function bind() {
+  $("btnKeys").onclick = openKeys;
+  $("btnSettings").onclick = openSettings;
+  $("btnStats").onclick = openStats;
+  $("btnReset").onclick = () => {
+    if (!confirm("Clear all saved keys, settings and progress?")) return;
+    S = structuredClone(DEFAULTS);
+    save();
+    pendingDraft = new Set(S.keys);
+    startRound();
+    updateKeyCount();
+    openKeys();
+  };
+
+  $("btnApplyKeys").onclick = applyKeys;
+  $("btnCancelKeys").onclick = () => closeOverlay("ovKeys");
+  $("btnCloseSettings").onclick = () => closeOverlay("ovSettings");
+  $("btnCloseStats").onclick = () => closeOverlay("ovStats");
+  $("btnNextRound").onclick = startRound;
+  $("btnExitSummary").onclick = () => { $("summary").style.display = "none"; $("trainer").style.display = "block"; startRound(); };
+  $("btnQuickStart").onclick = () => {
+    S.keys = PRESETS.common.slice();
+    save(); updateKeyCount();
+    $("emptyState").style.display = "none";
+    $("trainer").style.display = "block";
+    startRound();
+  };
+
+  document.querySelectorAll("[data-preset]").forEach(b => {
+    b.onclick = () => {
+      pendingDraft = new Set(PRESETS[b.dataset.preset]);
+      renderKeyGrid();
+      updateKeyCount();
+    };
+  });
+
+  $("options").addEventListener("click", e => {
+    const b = e.target.closest(".opt");
+    if (b && !b.disabled) answer({ index: Number(b.dataset.i) });
+  });
+
+  document.querySelectorAll(".overlay").forEach(o => {
+    o.addEventListener("mousedown", e => { if (e.target === o) closeAll(); });
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const openPanel = document.querySelector(".overlay.open");
+    if (e.key === "Escape") { closeAll(); return; }
+    if (openPanel) return;
+
+    if (e.key.toLowerCase() === "k") { e.preventDefault(); openKeys(); return; }
+    if (e.key.toLowerCase() === "s") { e.preventDefault(); openSettings(); return; }
+
+    if ($("trainer").style.display === "none") return;
+    const answered = $("feedback").classList.contains("show");
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (answered) nextQuestion();
+      else if (S.answerMode === "type") {
+const v = $("typeInput").value;
+      if (v.trim()) submitTyped(); else answer(null);
+      }
+      else answer(null);
+      return;
+    }
+    if (answered) return;
+    if (S.answerMode === "choose" && /^[1-9]$/.test(e.key)) {
+      const i = Number(e.key) - 1;
+      if (i < current.options.length) { e.preventDefault(); answer({ index: i }); }
+      return;
+    }
+    if (e.key.toLowerCase() === "h") { e.preventDefault(); showHint(); }
+  });
+}
+
+function init() {
+  bindSegs();
+  bind();
+  pendingDraft = new Set(S.keys);
+  updateKeyCount();
+  if (activeKeys().length === 0) {
+    $("emptyState").style.display = "block";
+    $("trainer").style.display = "none";
+  } else {
+    startRound();
+  }
+}
+
+/* expose the theory engine for the test harness */
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { KEYS, triadsOf, trapTriadsOf, parallelKey, numeralOf, DEGREES, QUAL, keyLabel };
+}
+
+init();
+</script>
+</body>
+</html>
