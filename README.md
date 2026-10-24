@@ -77,8 +77,7 @@ scheduler, question generation, answer parsers, rendering, panels.
 - Natural minor only (see above).
 - Triads only; no sevenths, inversions, or secondary dominants.
 - Progress is per-browser; there is no account or sync.
-- Storage is keyed by `roman-numeral-trainer.v1` in `localStorage` and survives schema
-  migrations for the older stat format.
+- Storage is keyed by `harmonic-function-trainer.v1` in `localStorage`.
 
 ## License
 

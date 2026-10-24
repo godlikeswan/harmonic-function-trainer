@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Roman Numeral Trainer</title>
+<title>Harmonic Function Trainer — chord ↔ roman numeral drill</title>
 <style>
   :root {
     --bg: #0f1117;
@@ -34,6 +34,7 @@
     padding: 10px 0 16px;
   }
   header.top h1 { font-size: 19px; margin: 0; letter-spacing: .2px; font-weight: 650; }
+  header.top .tagline { font-size: 12.5px; font-weight: 400; color: var(--muted); letter-spacing: 0; }
   header.top .spacer { flex: 1 1 auto; }
   .iconbtn {
     background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
@@ -210,7 +211,7 @@
 <div class="wrap">
 
   <header class="top">
-    <h1>Roman Numeral Trainer</h1>
+    <h1>Harmonic Function Trainer <span class="tagline">chord ⇄ roman numeral</span></h1>
     <div class="spacer"></div>
     <button class="iconbtn" id="btnKeys">Keys <span id="keyCount"></span></button>
     <button class="iconbtn" id="btnSettings">Settings</button>
@@ -595,7 +596,7 @@ function trapTriadsOf(key) {
    2. STATE
    ============================================================ */
 
-const STORE_KEY = "roman-numeral-trainer.v1";
+const STORE_KEY = "harmonic-function-trainer.v1";
 const DEFAULTS = {
   keys: ["C major","G major","D major","A major","E major","F major",
          "A minor","E minor","D minor"],
@@ -623,15 +624,7 @@ function load() {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return structuredClone(DEFAULTS);
     const p = JSON.parse(raw);
-    const out = { ...structuredClone(DEFAULTS), ...p, stats: p.stats || {} };
-    if (out.dimSym === "deg") out.dimSym = "°";   // migration: old token stored literally
-    // migrate the old {n, ok} stat shape to the scheduler's richer records
-    for (const [id, r] of Object.entries(out.stats)) {
-      if (r && typeof r.n === "number") {
-        out.stats[id] = { seen: r.n, wrong: r.n - (r.ok || 0), last: 0, t: null, lapses: 0, streak: 0 };
-      }
-    }
-    return out;
+    return { ...structuredClone(DEFAULTS), ...p, stats: p.stats || {} };
   } catch { return structuredClone(DEFAULTS); }
 }
 function save() {
