@@ -1,11 +1,15 @@
 # Harmonic Function Trainer
 
 A single-file, offline web app for drilling the conversion between **chord names** and
-**roman numerals** in any key — e.g. `Dm` in A minor is `iv`, `B°` in C major is `vii°`.
+**roman numerals** in any key — e.g. `Dm` in A minor is `iv`, `Bdim` in C major is `vii°`.
 
-No build step, no dependencies, no network. Open `index.html` in a browser.
+No build step, no dependencies, no network.
 
 ![status](https://img.shields.io/badge/build-none-brightgreen)
+
+**[Play it live](https://godlikeswan.github.io/harmonic-function-trainer/)** — or open `index.html` in a browser.
+
+![Screenshot of the trainer showing a chord to roman numeral question, the key signature, four answer choices and the current streak](screenshot.png)
 
 ## What it trains
 
@@ -66,7 +70,8 @@ python -m http.server 8000
 ## Project layout
 
 ```
-index.html    the entire app — markup, styles, theory engine, scheduler
+index.html      the entire app — markup, styles, theory engine, scheduler
+screenshot.png  screenshot used in this README
 ```
 
 The `<script>` section is divided into numbered sections: theory, state, helpers,
