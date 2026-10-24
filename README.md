@@ -82,4 +82,4 @@ scheduler, question generation, answer parsers, rendering, panels.
 
 ## License
 
-Not yet chosen — add one before relying on this as reusable code.
+MIT — see [LICENSE](LICENSE).
